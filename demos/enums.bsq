@@ -1,9 +1,9 @@
 namespace NSMain;
 
 enum Colors {
-  red = 1,
-  green = 2,
-  blue = 3
+  red,
+  green,
+  blue
 }
 
 entrypoint function main(): Bool {
