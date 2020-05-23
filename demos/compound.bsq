@@ -1,0 +1,14 @@
+namespace NSMain;
+
+identifier UserKey = { id: Int, category: String };
+
+entity User {
+  field id: UserKey;
+  field name: String;
+}
+
+entrypoint function main(): Bool {
+  let user = User@{id=UserKey::create(1, "staff"), name="john"};
+  let user2 = User@{id=UserKey::create(2, "staff"), name="jakob"};
+  return user.id == user2.id;
+}

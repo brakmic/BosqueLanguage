@@ -1,0 +1,13 @@
+namespace NSMain;
+
+enum Colors {
+  red = 1,
+  green = 2,
+  blue = 3
+}
+
+entrypoint function main(): Bool {
+  let red = Colors::red;
+  let green = Colors::green;
+  return red == green;
+}

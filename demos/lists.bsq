@@ -1,0 +1,16 @@
+namespace NSMain;
+
+identifier UserId = {id: Int, category: String };
+
+entity Person {
+  field id: UserId;
+  field name: String;
+}
+
+entrypoint function main(): List<Person> {
+  let p1 = Person@{id=UserId::create(id=1, category="staff"), name="John"};
+  let p2 = Person@{id=UserId::create(id=2, category="staff"), name="Max"};
+  let persons = List<Person>@{p1, p2};
+  //return persons;
+  return persons.sort(fn(p1, p2) => p1.id < p2.id);
+}
