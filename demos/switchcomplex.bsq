@@ -1,0 +1,13 @@
+namespace NSMain;
+
+entrypoint function main(): Int {
+  let x = {a = 1, b = 2};
+
+  let result = switch(x) {
+    case {a=2, b=2}     => 99
+    case let {a=1, b=2} => x.b
+    case _              => -1
+  };
+
+  return result;
+}

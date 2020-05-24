@@ -1,0 +1,10 @@
+namespace NSMain;
+
+entrypoint function main(): String {
+  let a = 10;
+  switch(a) {
+    case 1 => { return "one"; }
+    case 0 => { return "zero"; }
+    case _ => { return "out of range"; }
+  }
+}

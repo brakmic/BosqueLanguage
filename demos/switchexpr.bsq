@@ -1,0 +1,22 @@
+namespace NSMain;
+
+function complex_switch(): Int {
+  let x = {a = 2, b = 1};
+  let result = switch(x) {
+    case {a=2, b=1} => 99
+    case let {a=1, b=2} => x.b
+    case _ => -1
+  };
+  return result;
+}
+
+entrypoint function main(): String {
+  let a = 10;
+  let result = switch(a) {
+                case 1 => "one"
+                case 0 => "two"
+                case _ => "out of range"
+  };
+  return result;
+  // return complex_switch();
+}

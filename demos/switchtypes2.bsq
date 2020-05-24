@@ -1,0 +1,11 @@
+namespace NSMain;
+
+entrypoint function main(): Any {
+  let x = 10;
+  switch(x) {
+      case Int when x >= 0 => { return x; }
+      case Int when x < 0 => { return -x; }
+      case {f=_: Int, g=let y: Int} when y != 0 => { return y; }
+      case _ => { return -1; }
+  }
+}
