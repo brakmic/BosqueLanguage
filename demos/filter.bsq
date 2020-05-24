@@ -1,0 +1,6 @@
+namespace NSMain;
+
+entrypoint function main(): List<Int> {
+  let nums = List<Int>@{ 4, 9, 6, 0, 7, 2, 1, 5 };
+  return nums.filter(fn(e) => e > 4);
+}
