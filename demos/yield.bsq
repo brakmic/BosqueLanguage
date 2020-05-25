@@ -1,0 +1,19 @@
+namespace NSMain;
+
+function abs(x?: Int): Int {
+    if(x == none) {
+        return 0;
+    }
+
+    return {|
+        var y = x;
+        if(y < 0) {
+            y = -y;
+        }
+        yield y;
+    |};
+}
+
+entrypoint function main(): Int {
+  return abs(-123);
+}
