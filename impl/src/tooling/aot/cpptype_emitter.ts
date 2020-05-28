@@ -927,35 +927,11 @@ class CPPTypeEmitter {
                     };
             }
             else {
-                const copy_constructor_initializer = entity.fields.map((fd) => {
-                    return `${this.mangleStringForCpp(fd.fkey)}(src.${this.mangleStringForCpp(fd.fkey)})`;
-                });
-                const copy_cons = `${this.mangleStringForCpp(entity.tkey)}(const ${this.mangleStringForCpp(entity.tkey)}& src) ${copy_constructor_initializer.length !== 0 ? ":" : ""} ${copy_constructor_initializer.join(", ")} { ; }`;
-
-                const move_constructor_initializer = entity.fields.map((fd) => {
-                    return `${this.mangleStringForCpp(fd.fkey)}(std::move(src.${this.mangleStringForCpp(fd.fkey)}))`;
-                });
-                const move_cons = `${this.mangleStringForCpp(entity.tkey)}(${this.mangleStringForCpp(entity.tkey)}&& src) ${move_constructor_initializer.length !== 0 ? ":" : ""} ${move_constructor_initializer.join(", ")} { ; }`;
-
-                const copy_assign_ops = entity.fields.map((fd) => {
-                    return `this->${this.mangleStringForCpp(fd.fkey)} = src.${this.mangleStringForCpp(fd.fkey)};`;
-                });
-                const copy_assign = `${this.mangleStringForCpp(entity.tkey)}& operator=(const ${this.mangleStringForCpp(entity.tkey)}& src)`
-                + `{\n`
-                + `  if (this == &src) return *this;\n\n  `
-                + copy_assign_ops.join("\n  ")
-                + `return *this;\n`
-                + `}\n`;
-
-                const move_assign_ops = entity.fields.map((fd) => {
-                    return `this->${this.mangleStringForCpp(fd.fkey)} = std::move(src.${this.mangleStringForCpp(fd.fkey)});`;
-                });
-                const move_assign = `${this.mangleStringForCpp(entity.tkey)}& operator=(${this.mangleStringForCpp(entity.tkey)}&& src)`
-                + `{\n`
-                + `  if (this == &src) return *this;\n\n  `
-                +  move_assign_ops.join("\n  ")
-                + `return *this;\n`
-                + `}\n`;
+                const copy_cons = `${this.mangleStringForCpp(entity.tkey)}(const ${this.mangleStringForCpp(entity.tkey)}& src) = default;`;
+                const move_cons = `${this.mangleStringForCpp(entity.tkey)}(${this.mangleStringForCpp(entity.tkey)}&& src) = default;`;
+                
+                const copy_assign = `${this.mangleStringForCpp(entity.tkey)}& operator=(const ${this.mangleStringForCpp(entity.tkey)}& src) = default;`;
+                const move_assign = `${this.mangleStringForCpp(entity.tkey)}& operator=(${this.mangleStringForCpp(entity.tkey)}&& src) = default;`;
 
                 const incop_ops = entity.fields.map((fd) => {
                     return this.buildIncOpForType(this.getMIRType(fd.declaredType), `tt.${this.mangleStringForCpp(fd.fkey)}`) + ";";
@@ -1062,11 +1038,17 @@ class CPPTypeEmitter {
             constructor_initializer.push(`entry_${i}(e${i})`);
         }
 
+        const copy_cons = `${this.mangleStringForCpp(tt.trkey)}(const ${this.mangleStringForCpp(tt.trkey)}& src) = default;`;
+        const move_cons = `${this.mangleStringForCpp(tt.trkey)}(${this.mangleStringForCpp(tt.trkey)}&& src) = default;`;
+
+        const copy_assign = `${this.mangleStringForCpp(tt.trkey)}& operator=(const ${this.mangleStringForCpp(tt.trkey)}& src) = default;`;
+        const move_assign = `${this.mangleStringForCpp(tt.trkey)}& operator=(${this.mangleStringForCpp(tt.trkey)}&& src) = default;`;
+
         const fjoins = displayvals.map((dv) => `diagnostic_format(${dv})`).join(" + std::string(\", \") + ");
         const display = "std::string display() const\n"
             + "    {\n"
             + `        BSQRefScope ${this.mangleStringForCpp("$scope$")};\n`
-            + `        return std::string("(|) ") + ${fjoins} + std::string(" |)");\n`
+            + `        return std::string("(| ") + ${fjoins} + std::string(" |)");\n`
             + "    }";
 
         const processForCallReturn = "void processForCallReturn(BSQRefScope& scope)\n"
@@ -1080,6 +1062,10 @@ class CPPTypeEmitter {
             + `    ${fields.join("\n    ")}\n\n`
             + `    ${this.mangleStringForCpp(tt.trkey)}() { ; }\n\n`
             + `    ${this.mangleStringForCpp(tt.trkey)}(${constructor_args.join(", ")}) : ${constructor_initializer.join(", ")} { ; }\n\n`
+            + `    ${copy_cons}\n`
+            + `    ${move_cons}\n`
+            + `    ${copy_assign}\n`
+            + `    ${move_assign}\n`
             + `    ${display}\n\n`
             + `    ${processForCallReturn}\n`
             + "};"
