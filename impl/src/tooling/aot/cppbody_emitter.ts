@@ -1795,7 +1795,7 @@ class CPPBodyEmitter {
         return `BSQMapOps<${mrepr}, ${krepr.std}, ${kops.dec}, ${kops.display}, ${kops.less}, ${kops.eq}, ${vrepr.std}, ${vops.dec}, ${vops.display}>`;
     }
 
-    createLambdaFor(pc: MIRPCode): string {
+    createLambdaFor(pc: MIRPCode, scopevar?: string): string {
         const pci = this.assembly.invokeDecls.get(pc.code) || this.assembly.primitiveInvokeDecls.get(pc.code) as MIRInvokeDecl;
         let params: string[] = [];
         let args: string[] = [];
@@ -1807,12 +1807,11 @@ class CPPBodyEmitter {
         const cargs = pc.cargs.map((ca) => this.typegen.mangleStringForCpp(ca));
         const rrepr = this.typegen.getCPPReprFor(this.typegen.getMIRType(pci.resultType));
 
-        if(this.typegen.getRefCountableStatus(this.typegen.getMIRType(pci.resultType)) === "no") {
+        if(scopevar === undefined || this.typegen.getRefCountableStatus(this.typegen.getMIRType(pci.resultType)) === "no") {
             return `[=](${params.join(", ")}) -> ${rrepr.std} { return ${this.typegen.mangleStringForCpp(pc.code)}(${[...args, ...cargs].join(", ")}); }`;
         }
         else {
-            const scopevar = this.varNameToCppName("$scope_lambda$");
-            return `[=](${params.join(", ")}) -> ${rrepr.std} { BSQRefScope ${scopevar}(true); return ${this.typegen.mangleStringForCpp(pc.code)}(${[...args, ...cargs, scopevar].join(", ")}); }`;
+            return `[=, &${scopevar}](${params.join(", ")}) -> ${rrepr.std} { return ${this.typegen.mangleStringForCpp(pc.code)}(${[...args, ...cargs, scopevar].join(", ")}); }`;
         }
     }
 
@@ -1874,12 +1873,83 @@ class CPPBodyEmitter {
                 bodystr = `auto $$return = BSQ_NEW_NO_RC(BSQStringOf, ${params[0]}->sdata, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(this.currentRType.trkey)});`;
                 break;
             }
+            case "list_zip": {
+                const ltype1 = this.typegen.getMIRType(idecl.params[0].type);
+                const l1contents = (this.typegen.assembly.entityDecls.get(ltype1.trkey) as MIREntityTypeDecl).terms.get("T") as MIRType;
+                const ltype1repr = this.typegen.getCPPReprFor(ltype1);
+            
+                const ltype2 = this.typegen.getMIRType(idecl.params[1].type);
+                const l2contents = (this.typegen.assembly.entityDecls.get(ltype2.trkey) as MIREntityTypeDecl).terms.get("T") as MIRType;
+                const ltype2repr = this.typegen.getCPPReprFor(ltype2);
+
+                const rtype = this.typegen.getMIRType(idecl.resultType);
+                const rcontents = (this.typegen.assembly.entityDecls.get(rtype.trkey) as MIREntityTypeDecl).terms.get("T") as MIRType;
+                const rtyperepr = this.typegen.getCPPReprFor(rtype);
+                
+                const iflag = this.typegen.generateInitialDataKindFlag(rcontents);
+                const codecc1 = this.typegen.coerce("uu", l1contents, this.typegen.anyType);
+                const codecc2 = this.typegen.coerce("vv", l2contents, this.typegen.anyType);
+                const zlambda = `[&${scopevar}](${this.typegen.getCPPReprFor(l1contents).std} uu, ${this.typegen.getCPPReprFor(l2contents).std} vv) -> ${this.typegen.getCPPReprFor(rcontents).std} { return BSQTuple::createFromSingle<${iflag}>({ INC_REF_CHECK(Value, ${codecc1}), INC_REF_CHECK(Value, ${codecc2}) }); }`;
+
+                bodystr = `auto $$return = BSQListUtilOps::list_zip<${ltype1repr.base}, ${ltype2repr.base}, ${rtyperepr.base}, ${this.typegen.getCPPReprFor(rcontents).std}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(rtype.trkey)}>(${params[0]}, ${params[1]}, ${zlambda});`;
+                break;
+            }
+            case "list_unzip": {
+                const rtype = this.typegen.getMIRType(idecl.resultType);
+                const [rt1, rt2] = (rtype.options[0] as MIREphemeralListType).entries;
+                const rtyperepr = this.typegen.getCPPReprFor(rtype);
+
+                const repr1 = this.typegen.getCPPReprFor(rt1);
+                const contents1 = (this.typegen.assembly.entityDecls.get(rt1.trkey) as MIREntityTypeDecl).terms.get("T") as MIRType;
+                const contents1repr = this.typegen.getCPPReprFor(contents1);
+                const repr2 = this.typegen.getCPPReprFor(rt2);
+                const contents2 = (this.typegen.assembly.entityDecls.get(rt2.trkey) as MIREntityTypeDecl).terms.get("T") as MIRType;
+                const contents2repr = this.typegen.getCPPReprFor(contents2);
+
+                const ltype = this.typegen.getMIRType(idecl.params[0].type);
+                const ltyperepr = this.typegen.getCPPReprFor(ltype);
+                const lcontents = (this.typegen.assembly.entityDecls.get(ltype.trkey) as MIREntityTypeDecl).terms.get("T") as MIRType;
+                const lcontentsrepr = this.typegen.getCPPReprFor(lcontents);
+
+                const acc1 = this.typegen.coerce("cr.atFixed<0>()", this.typegen.anyType, contents1);
+                const acc2 = this.typegen.coerce("cr.atFixed<1>()", this.typegen.anyType, contents2);
+
+                const uzlambda = `[](${lcontentsrepr.std} cr) -> std::pair<${contents1repr.std}, ${contents2repr.std}> { return std::make_pair(${acc1}, ${acc2}); }`;
+                const rv = `auto $uvpair$ = BSQListUtilOps::list_unzip<${repr1.base}, ${contents1repr.std}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(rt1.trkey)}, ${repr2.base}, ${contents2repr.std}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(rt2.trkey)}, ${ltyperepr.base}>(${params[0]}, ${uzlambda});`;
+
+                bodystr = `${rv} auto $$return = ${rtyperepr.base}{$uvpair$.first, $uvpair$.second};`;
+                break;
+            }
+            case "list_range": {
+                const rtype = this.typegen.getMIRType(idecl.resultType);
+                const rtyperepr = this.typegen.getCPPReprFor(rtype);
+
+                bodystr = `auto $$return = BSQListUtilOps::list_range<${rtyperepr.base}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(rtype.trkey)}>(${params[0]}, ${params[1]});`;
+                break;
+            }
             case "list_size": {
-                bodystr = `auto $$return = (int64_t)(${params[0]}->entries.size());`
+                bodystr = `auto $$return = (int64_t)(${params[0]}->entries.size());`;
                 break;
             }
             case "list_unsafe_get": {
                 bodystr = `auto $$return = ${params[0]}->entries[${params[1]}];`;
+                break;
+            }
+            case "list_concat": {
+                const ltype = this.getEnclosingListTypeForListOp(idecl);
+                const ctype = this.getListContentsInfoForListOp(idecl);
+                
+                const larg = this.typegen.getMIRType(idecl.params[0].type);
+                const lrepr = this.typegen.getCPPReprFor(larg).std
+
+                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_concat<${lrepr}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(ltype.trkey)}>(${params[0]});`
+                break;
+            }
+            case "list_fill": {
+                const ltype = this.getEnclosingListTypeForListOp(idecl);
+                const ctype = this.getListContentsInfoForListOp(idecl);
+                
+                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_fill<MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(ltype.trkey)}>(${params[0]}, ${params[1]});`
                 break;
             }
             case "list_toset": {
@@ -2139,8 +2209,10 @@ class CPPBodyEmitter {
                 const ltype = this.getEnclosingListTypeForListOp(idecl);
                 const ctype = this.getListContentsInfoForListOp(idecl);
                 const [utype, ucontents, utag] = this.getListResultTypeFor(idecl);
-                const lambda = this.createLambdaFor(idecl.pcodes.get("f") as MIRPCode);
-                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_mapindex<${utype}, ${ucontents}, ${utag}>(${params[0]}, ${lambda});`;
+
+                const lambdascope = this.typegen.mangleStringForCpp("$lambda_scope$");
+                const lambda = this.createLambdaFor(idecl.pcodes.get("f") as MIRPCode, lambdascope);
+                bodystr = `BSQRefScope ${lambdascope}(true); auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_mapindex<${utype}, ${ucontents}, ${utag}>(${params[0]}, ${lambda});`;
                 break;
             }
             case "list_project": {
@@ -2249,13 +2321,60 @@ class CPPBodyEmitter {
                 const krepr = this.typegen.getCPPReprFor(ktype);
                 const kops = this.typegen.getFunctorsForType(ktype);
 
-                const lambdapf = this.createLambdaFor(idecl.pcodes.get("pf") as MIRPCode);
+                const lambdascope = this.typegen.mangleStringForCpp("$lambda_scope$");
+                const lambdapf = this.createLambdaFor(idecl.pcodes.get("pf") as MIRPCode, lambdascope);
                 const lambdamec = `[](${this.typegen.getCPPReprFor(ktype).std} kk, ${this.typegen.getCPPReprFor(ltype).std} ll) -> ${mapentrytype} { return ${mapentrytype}{kk, ll}; }`;
 
-                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_partition<${this.typegen.getCPPReprFor(maptype).base}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(maptype.trkey)}, ${mapentrytype}, ${krepr.std}, ${kops.dec}, ${kops.less}>(${params[0]}, ${lambdapf}, ${lambdamec});`
+                bodystr = `BSQRefScope ${lambdascope}(true); auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_partition<${this.typegen.getCPPReprFor(maptype).base}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(maptype.trkey)}, ${mapentrytype}, ${krepr.std}, ${kops.dec}, ${kops.less}>(${params[0]}, ${lambdapf}, ${lambdamec});`
                 break;
             }
+            case "list_toindexmap": {
+                const ltype = this.getEnclosingListTypeForListOp(idecl);
+                const ctype = this.getListContentsInfoForListOp(idecl);
 
+                const maptype = this.typegen.getMIRType(idecl.resultType);
+                const maptyperepr = this.typegen.getCPPReprFor(maptype);
+                const mapentrytype = this.getMEntryTypeForMapType(maptype.trkey);
+
+                const lambdamec = `[](int64_t kk, ${this.typegen.getCPPReprFor(ctype).std} vv) -> ${mapentrytype} { return ${mapentrytype}{kk, ${this.typegen.getFunctorsForType(ctype).inc}{}(vv)}; }`;
+
+                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_toindexmap<${maptyperepr.base}, ${mapentrytype}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(maptype.trkey)}>(${params[0]}, ${lambdamec});`;
+                break;
+            }
+            case "list_transformindexmap": {
+                const ltype = this.getEnclosingListTypeForListOp(idecl);
+                const ctype = this.getListContentsInfoForListOp(idecl);
+
+                const maptype = this.typegen.getMIRType(idecl.resultType);
+                const vftype = this.getMapValueContentsInfoForMapType(idecl.resultType)
+                const maptyperepr = this.typegen.getCPPReprFor(maptype);
+                const mapentrytype = this.getMEntryTypeForMapType(maptype.trkey);
+
+                const lambdascope = this.typegen.mangleStringForCpp("$lambda_scope$");
+                const lambdavf = this.createLambdaFor(idecl.pcodes.get("vf") as MIRPCode, lambdascope);
+                const lambdamec = `[](int64_t kk, ${this.typegen.getCPPReprFor(vftype).std} vv) -> ${mapentrytype} { return ${mapentrytype}{kk, vv}; }`;
+
+                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_transformindexmap<${maptyperepr.base}, ${mapentrytype}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(maptype.trkey)}>(${params[0]}, ${lambdavf}, ${lambdamec});`;
+                break;
+            }
+            case "list_transformmap": {
+                const ltype = this.getEnclosingListTypeForListOp(idecl);
+                const ctype = this.getListContentsInfoForListOp(idecl);
+
+                const maptype = this.typegen.getMIRType(idecl.resultType);
+                const kftype = this.getMapKeyContentsInfoForMapType(idecl.resultType)
+                const vftype = this.getMapValueContentsInfoForMapType(idecl.resultType)
+                const maptyperepr = this.typegen.getCPPReprFor(maptype);
+                const mapentrytype = this.getMEntryTypeForMapType(maptype.trkey);
+
+                const lambdascope = this.typegen.mangleStringForCpp("$lambda_scope$");
+                const lambdakf = this.createLambdaFor(idecl.pcodes.get("kf") as MIRPCode, lambdascope);
+                const lambdavf = this.createLambdaFor(idecl.pcodes.get("vf") as MIRPCode, lambdascope);
+                const lambdamec = `[](${this.typegen.getCPPReprFor(kftype).std} kk, ${this.typegen.getCPPReprFor(vftype).std} vv) -> ${mapentrytype} { return ${mapentrytype}{kk, vv}; }`;
+
+                bodystr = `auto $$return = ${this.createListOpsFor(ltype, ctype)}::list_transformmap<${maptyperepr.base}, ${mapentrytype}, MIRNominalTypeEnum::${this.typegen.mangleStringForCpp(maptype.trkey)}, ${this.typegen.getCPPReprFor(kftype).std}, ${this.typegen.getFunctorsForType(kftype).less}, ${this.typegen.getCPPReprFor(vftype).std}>(${params[0]}, ${lambdakf}, ${lambdavf}, ${lambdamec});`;
+                break;
+            }
             case "set_size": {
                 bodystr = `auto $$return = ${params[0]}->entries.size();`;
                 break;
