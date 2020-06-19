@@ -1,0 +1,10 @@
+namespace NSMain;
+
+entrypoint function main(): Int {
+  let var a = 10;
+  if (a < 5) {
+    return a;
+  } else {
+    return 1;
+  }
+}

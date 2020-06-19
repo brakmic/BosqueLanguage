@@ -1,3 +1,7 @@
 
 impl/node_modules/
 **/.vscode/
+
+**/*.dSYM
+
+**/*.exe

@@ -1,0 +1,8 @@
+namespace NSMain;
+
+entrypoint function main(): Int {
+  //[let x: Int, let y: Int] = [ 10, 15 ];
+  //{a=let c, b=let d} = {a=1, b=2};
+  {f=let x, g=[let y, let z]} = {f=1, g=[2, 3]};
+  return z;
+}

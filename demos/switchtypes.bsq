@@ -1,0 +1,19 @@
+namespace NSMain;
+
+entity Zeppelin {
+  field driver: String;
+}
+
+entity FlyingSaucer {
+  field pilot: String;
+}
+
+entrypoint function main(): Any {
+  let ufo = FlyingSaucer@{ pilot="ET" };
+  let msg = switch(ufo) {
+    type FlyingSaucer => "I just saw a UFO!"
+    type Zeppelin     => "It was a zeppelin. Hallucinating much?"
+    case _            => "What was it?"
+  };
+  return msg;
+}

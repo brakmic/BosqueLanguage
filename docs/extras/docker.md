@@ -12,6 +12,7 @@ More detailed information on developing inside containers can be found [here](ht
 
 Alternatively, you could also build and run Docker manually by entering these two commands:
 
+<<<<<<< HEAD
 `docker build --pull --rm -f Dockerfile -t bosquelanguage:latest .`
 
 `docker run --rm -it  bosquelanguage:latest`
@@ -33,3 +34,8 @@ To install a specific NodeJS version use **NODE_VERSION**.
 ```shell
 docker build --build-arg NODE_VERSION=14.x --pull --rm -f Dockerfile -t bosquelanguage:latest .
 ```
+=======
+`docker build --pull --rm -f "Dockerfile" -t bosquelanguage:latest "."`
+
+`docker run --rm -it  bosquelanguage:latest`
+>>>>>>> 8dec752141133b451493016ffe2ffffea0347f36

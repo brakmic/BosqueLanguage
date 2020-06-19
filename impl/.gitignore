@@ -3,3 +3,7 @@
 /.vscode
 *.xml
 *.dgml
+
+
+# brakmic's ignore part
+.history/

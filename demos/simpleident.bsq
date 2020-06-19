@@ -1,0 +1,15 @@
+namespace NSMain;
+
+identifier SimpleId = Int;
+
+entity User {
+  field id: SimpleId;
+  field category: String;
+  field name: String;
+}
+
+entrypoint function main(): Bool {
+  let user = User@{id=SimpleId::create(1), category="staff", name="john"};
+  let user2 = User@{id=SimpleId::create(2), category="staff", name="jakob"};
+  return user.id == user2.id;
+}

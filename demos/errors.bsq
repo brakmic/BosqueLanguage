@@ -1,0 +1,11 @@
+namespace NSMain;
+
+function throw_error(list: List<Int>, b: Int): Int {
+  var a = list.min();
+  check b != 0;
+  return a + b;
+}
+
+entrypoint function main(): Int {
+    return throw_error(List<Int>@{}, 0);
+}

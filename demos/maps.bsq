@@ -1,0 +1,26 @@
+namespace NSMain;
+
+identifier AnimalKey = { id: Int, scientific_name: String };
+
+entity Bird {
+  field name: String;
+}
+
+entrypoint function main(): Bool {
+  let ravenId = AnimalKey::create(id=1, 
+                      scientific_name="Corvus corax");
+  let raven = Bird@{name="Raven"};
+  let eagleId = AnimalKey::create(id=2, 
+                          scientific_name="Haliaeetus leucocephalus");
+  let baldEagle = Bird@{name="Bald Eagle"};
+  let mockingBirdId = AnimalKey::create(id=3, 
+                          scientific_name="Mimus dorsalis");
+  let mockingBird = Bird@{name="Brown-backed mockingbird"};
+
+  let birds = Map<AnimalKey, Bird>@{};
+  birds.add(ravenId, raven);
+  birds.add(eagleId, baldEagle);
+
+  return birds.has(eagleId);
+  
+}
