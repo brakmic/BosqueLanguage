@@ -1,0 +1,22 @@
+namespace NSMain;
+
+typedef Price = Int;
+
+concept OrderPrice {
+
+}
+
+entity Limit provides OrderPrice {
+    invariant $price >= 0;
+    field price: Price;
+}
+
+function lockinPrice(requestPrice: OrderPrice, marketPrice: Price): Price {
+    return requestPrice.is<Limit>() ? requestPrice.price : marketPrice;
+}
+
+entrypoint function main(): Bool {
+    let requestPrice = Limit@{price=200};
+    let marketPrice: Price = 10;
+    return lockinPrice(requestPrice, marketPrice) < ((marketPrice * 9) / 10);
+}
