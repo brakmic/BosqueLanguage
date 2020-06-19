@@ -1,0 +1,16 @@
+namespace NSMain;
+
+concept Car {
+}
+
+entity Tesla provides Car {
+    field id: Int;
+    field model: String;
+}
+
+entrypoint function main(): Map<Int, Car> {
+    let tesla3 = Tesla@{id=1, model="3"};
+    let teslaS = Tesla@{id=2, model="S"};
+    let cars = Map<Int, Car>@{1=>tesla3.as<Car>(), 2=>teslaS.as<Car>()};
+    return cars;
+}

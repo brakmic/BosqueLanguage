@@ -1,0 +1,22 @@
+namespace NSMain;
+
+typedef ID = Int;
+typedef Price = Int;
+
+entity Deal {
+    field id: ID;
+    field price: Price;
+}
+
+typedef DealState = Map<ID, Deal>;
+
+entrypoint function main(): DealState {
+    let deal1 = Deal@{id=1, price=10};
+    let deal2 = Deal@{id=2, price=50};
+    let deal3 = Deal@{id=3, price=60};
+    let deal4 = Deal@{id=4, price=70};
+    let deal5 = Deal@{id=5, price=99};
+    let dealState = DealState@{1=>deal1, 2=>deal2, 3=>deal3, 4=>deal4, 5=>deal5};
+    let set = Set<ID>@{deal2.id, deal4.id};
+    return dealState.excludeSet(set);
+}

@@ -1,0 +1,7 @@
+namespace NSMain;
+
+entrypoint function main(): Float64 {
+    let a: Float64 = 10.23f;
+    let b: Float64 = 23.23f;
+    return a + b;
+}
