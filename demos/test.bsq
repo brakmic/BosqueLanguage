@@ -1,44 +1,51 @@
+// namespace NSMain;
+
+// typedef ID = Int;
+// typedef Price = Int;
+// typedef ProductID = String;
+// typedef Quantity = Int;
+
+// concept Response {
+// }
+
+// concept BuyResponse provides Response {
+//     field id: ID;
+// }
+
+// entity BuyAccepted provides BuyResponse {
+//     invariant $price >= 0;
+//     invariant $quantity >= 0;
+
+//     field productId: ProductID;
+//     field price: Price;
+//     field quantity: Quantity;
+// }
+
+// entity SellAccepted provides Response {
+//     invariant $price >= 0;
+
+//     field id: ID;
+//     field price: Price;
+// }
+
+// entity OrderState { 
+//     field buys: Map<ID, BuyResponse>;
+//     field sells: Map<ID, SellAccepted>;
+// }
+
+// entrypoint function main(): OrderState {
+//     let res1 = BuyAccepted@{id=1, productId="bread", price=10, quantity=4};
+//     let res2 = BuyAccepted@{id=2, productId="water", price=10, quantity=4};
+//     let res3 = BuyAccepted@{id=3, productId="salt", price=10, quantity=4};
+//     let buys = Map<ID, BuyResponse>@{}; //1=>res1, 2=>res2, 3=>res3
+//     let sells = Map<ID, SellAccepted>@{1=>SellAccepted@{id=1,price=10}, 2=>SellAccepted@{id=2,price=15}};
+//     let orderState = OrderState@{buys=buys.unionWith(Map<ID, BuyResponse>@{(4=>res1).convert<ID, BuyResponse>()}), sells=sells};
+//     return orderState;
+// }
+
 namespace NSMain;
 
-typedef ID = Int;
-typedef Price = Int;
-typedef ProductID = String;
-typedef Quantity = Int;
-
-concept Response {
-}
-
-concept BuyResponse provides Response {
-    field id: ID;
-}
-
-entity BuyAccepted provides BuyResponse {
-    invariant $price >= 0;
-    invariant $quantity >= 0;
-
-    field productId: ProductID;
-    field price: Price;
-    field quantity: Quantity;
-}
-
-entity SellAccepted provides Response {
-    invariant $price >= 0;
-
-    field id: ID;
-    field price: Price;
-}
-
-entity OrderState { 
-    field buys: Map<ID, BuyResponse>;
-    field sells: Map<ID, SellAccepted>;
-}
-
-entrypoint function main(): OrderState {
-    let res1 = BuyAccepted@{id=1, productId="bread", price=10, quantity=4};
-    let res2 = BuyAccepted@{id=2, productId="water", price=10, quantity=4};
-    let res3 = BuyAccepted@{id=3, productId="salt", price=10, quantity=4};
-    let buys = Map<ID, BuyResponse>@{}; //1=>res1, 2=>res2, 3=>res3
-    let sells = Map<ID, SellAccepted>@{1=>SellAccepted@{id=1,price=10}, 2=>SellAccepted@{id=2,price=15}};
-    let orderState = OrderState@{buys=buys.unionWith(Map<ID, BuyResponse>@{4=>res1}), sells=sells};
-    return orderState;
+entrypoint function main(): Int {
+  let a = if(1 > 2) 1 else 0;
+  return a;
 }
