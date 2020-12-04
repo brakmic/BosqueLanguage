@@ -1,0 +1,13 @@
+namespace NSMain;
+
+entity InputValue provides APIType {
+    field value: Int;
+}
+
+entrypoint function func2(numbers: List<Int>): String {
+    return "";
+}
+
+entrypoint function main(numbers: Buffer<String>): String {
+    return "";
+}

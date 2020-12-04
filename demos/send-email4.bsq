@@ -1,0 +1,60 @@
+namespace NSMain;
+
+typedef UserId = /^[A-Z]-[a-z]{3}-(\d)+$/;
+
+entity User {
+    field name: String;
+    field id: SafeString<UserId>;
+}
+
+entity ApplicationContext {
+    field emailServiceEnabled: Bool;
+    field successCount: Int = 0;
+    field errorCount: Int = 0;
+    field leftToSend: Int = 10;
+    field user: User;
+}
+
+function enableEmailService(ref context: ApplicationContext): ApplicationContext {
+    context = context.update(emailServiceEnabled = true);
+    return context;
+}
+
+
+function sendEmail(ref context: ApplicationContext): ApplicationContext {
+   let sent = doSend(context);
+   let {
+       successCount = suc, errorCount = error, leftToSend = left
+   } = context.{ successCount, errorCount, leftToSend };
+
+   if (sent) {
+       context = context.update(
+           successCount = suc + 1, leftToSend = left - 1
+       );
+       _debug(String::concat("Email sent to ", context.user.name, "!"));
+   } else {
+       context = context.update(
+           errorCount = error + 1, leftToSend = left - 1
+       );
+       _debug("Error sending email");
+   }
+   return context;
+}
+
+function doSend(ctx: ApplicationContext): Bool {
+    if (ctx.emailServiceEnabled) {
+        // real sending logic goes here
+        return true;
+    }
+    return false;
+}
+
+entrypoint function main(): ApplicationContext {
+    let user = User@{ name = "John Doe", id = UserId'A-bcd-123' };
+    var context = ApplicationContext@{
+        emailServiceEnabled = false, user = user
+    };
+
+    context = enableEmailService(ref context);
+    return sendEmail(ref context);
+}

@@ -1,0 +1,6 @@
+namespace NSMain;
+
+entrypoint function main() {
+    //return "Hello, world!";
+    1;
+}

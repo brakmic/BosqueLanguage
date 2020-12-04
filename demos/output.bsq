@@ -1,0 +1,5 @@
+namespace NSMain;
+
+entrypoint function main(): List<Int> {
+    return List<Int>@{1, 2, 3, 4};
+}

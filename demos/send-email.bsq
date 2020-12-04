@@ -1,0 +1,29 @@
+namespace NSMain;
+
+entity User {
+    field name: String;
+    field id: Int;
+}
+entity ApplicationContext {
+    field emailServiceEnabled: Bool;
+    field user: User;
+}
+
+
+function sendEmail(ctx: ApplicationContext): String {
+    if (ctx.emailServiceEnabled) {
+        return String::concat("Email sent to ", ctx.user.name, "!");
+    } else {
+        return "Email service disabled";
+    }
+}
+
+entrypoint function main(): String {
+    let user = User@{ name = "John Doe", id = 1 };
+    let context = ApplicationContext@{
+        emailServiceEnabled = false, user = user
+    };
+
+    let newContext = context.update(emailServiceEnabled = true);
+    return sendEmail(newContext);
+}

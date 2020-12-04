@@ -1,0 +1,36 @@
+namespace NSMain;
+
+typedef UserId = /^[A-Z]-[a-z]{3}-(\d)+$/;
+
+entity User {
+    field name: String;
+    field id: SafeString<UserId>;
+}
+entity ApplicationContext {
+    field emailServiceEnabled: Bool;
+    field user: User;
+}
+
+function enableEmailService(ref context: ApplicationContext): ApplicationContext {
+    context = context.update(emailServiceEnabled = true);
+    return context;
+}
+
+
+function sendEmail(ctx: ApplicationContext): String {
+    if (ctx.emailServiceEnabled) {
+        return String::concat("Email sent to ", ctx.user.name, "!");
+    } else {
+        return "Email service disabled";
+    }
+}
+
+entrypoint function main(): String {
+    let user = User@{ name = "John Doe", id = UserId'A-bcd-123' };
+    var context = ApplicationContext@{
+        emailServiceEnabled = false, user = user
+    };
+
+    context = enableEmailService(ref context);
+    return sendEmail(context);
+}
